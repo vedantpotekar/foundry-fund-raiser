@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 import {Script} from "forge-std/Script.sol";
-
-contract HelperConfig {
+import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
+contract HelperConfig is Script {
     NetworkConfig public activeNetworkConfig;
     struct NetworkConfig {
         address priceFeed;
@@ -20,7 +20,17 @@ contract HelperConfig {
         NetworkConfig memory sepoliaConfig = NetworkConfig({priceFeed: 0x694AA1769357215DE4FAC081bf1f309aDC325306});
         return sepoliaConfig;
     } 
-    function getAnvilConfig() public pure returns (NetworkConfig memory){
+    function getAnvilConfig() public returns (NetworkConfig memory){
+        if(activeNetworkConfig.priceFeed != address(0)){
+            return activeNetworkConfig;
+        }
 
+        // Deploy the mocks
+        vm.startBroadcast();
+        MockV3Aggregator mockPriceFeed = new MockV3Aggregator(8,2000e8); // decimals, initial price
+        vm.stopBroadcast();
+        // Return the mock address
+        NetworkConfig memory anvilConfig = NetworkConfig({priceFeed: address(mockPriceFeed)});
+        return anvilConfig;
     } 
 }
